@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Maths 2de : Niveau Expert</title>
+    <title>Quiz Maths 2de : Niveau Expert (Nav Libre)</title>
     <script>
         window.MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
@@ -15,9 +15,9 @@
     <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
     <style>
         :root {
-            --primary: #dc2626; /* Rouge pour le mode difficile */
+            --primary: #dc2626;
             --primary-hover: #b91c1c;
-            --bg: #111827; /* Fond sombre pour faire "pro" */
+            --bg: #111827;
             --card: #1f2937;
             --text: #f9fafb;
             --text-muted: #9ca3af;
@@ -71,7 +71,7 @@
             margin: 0 auto 25px auto;
             border: 1px solid #4b5563;
             border-radius: 8px;
-            background: #fff; /* Le graph reste blanc pour la lisibilité */
+            background: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -79,7 +79,7 @@
             position: relative;
         }
 
-        /* Styles Function-Plot ajustés pour le mode expert */
+        /* Styles Function-Plot ajustés */
         .function-plot .grid .tick line { stroke: #d1d5db !important; opacity: 0.7; }
         .function-plot .axis path.domain { stroke: #000 !important; stroke-width: 2px !important; }
         .function-plot .axis text { fill: #000 !important; font-size: 12px !important; font-weight: bold; }
@@ -103,7 +103,7 @@
         .feedback.success { background-color: #d1fae5; border-left: 5px solid #10b981; color: #065f46; }
 
         .controls { display: flex; justify-content: space-between; margin-top: 20px; height: 50px; }
-        .btn-nav { color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+        .btn-nav { color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: background 0.2s;}
         .btn-next { background-color: var(--primary); }
         .btn-next:hover { background-color: var(--primary-hover); }
         .btn-prev { background-color: #4b5563; display: none; }
@@ -163,15 +163,13 @@
 <script>
     /*
      * DONNÉES DU QUIZ - VERSION DIFFICILE
-     * Pas d'expressions simples affichées, courbes complexes, pièges.
      */
     const quizData = [
-        // Q1 : Ensemble de définition (Courbe qui s'arrête)
+        // Q1
         {
             question: "Quel semble être l'ensemble de définition $\\mathcal{D}_f$ de cette fonction ?",
             plotConfig: {
                 data: [
-                    // Fonction définie seulement sur [-3, 4]
                     { fn: '-0.1*(x+3)*(x-4)*(x-1)', range: [-3, 4], color: '#dc2626', attr: { "stroke-width": 4 } },
                     { points: [[-3, 0], [4, 0]], fnType: 'points', graphType: 'scatter', color: 'black', attr: {r: 5} }
                 ],
@@ -184,16 +182,14 @@
                 { text: "$]-3 ; 4[$", correct: false },
                 { text: "$[-4 ; 6]$", correct: false }
             ],
-            hint: "💡 Regarde où la courbe commence et où elle s'arrête sur l'axe horizontal (axe des abscisses).",
-            explanation: "La courbe existe uniquement pour les valeurs de $x$ comprises entre -3 et 4 inclus. Ailleurs, il n'y a pas de tracé."
+            hint: "💡 Regarde où la courbe commence et où elle s'arrête sur l'axe horizontal.",
+            explanation: "La courbe existe uniquement pour les valeurs de $x$ comprises entre -3 et 4 inclus."
         },
-
-        // Q2 : Nombre de solutions f(x)=k (Lecture complexe)
+        // Q2
         {
             question: "Combien l'équation $f(x) = 1$ admet-elle de solutions ?",
             plotConfig: {
                 data: [
-                    // Polynôme de degré 4 (forme en W)
                     { fn: '0.2*(x+2)*(x-1)*(x-3)*(x+1) + 1.5', color: '#dc2626', attr: { "stroke-width": 4 } },
                     { fn: '1', color: '#4b5563', attr: {'stroke-dasharray': '5,5'}, isHint: true }
                 ],
@@ -209,13 +205,11 @@
             hint: "💡 Trace une droite horizontale à la hauteur $y=1$. Combien de fois coupe-t-elle la courbe rouge ?",
             explanation: "La droite horizontale $y=1$ coupe la courbe en 4 points distincts."
         },
-
-        // Q3 : Parité (Lecture de symétrie)
+        // Q3
         {
             question: "Que peut-on conjecturer sur la parité de la fonction représentée ?",
             plotConfig: {
                 data: [
-                    // Fonction impaire (symétrie centrale) : 0.1x^3 - x
                     { fn: '0.1*x^3 - x', color: '#dc2626', attr: { "stroke-width": 4 } }
                 ],
                 yAxis: { domain: [-4, 4] },
@@ -227,25 +221,13 @@
                 { text: "Elle n'est ni paire ni impaire", correct: false },
                 { text: "Elle est positive", correct: false }
             ],
-            hint: "💡 Observe la symétrie. Si tu plies le graphique autour de l'origine (centre), les parties se superposent-elles ?",
-            explanation: "La courbe est symétrique par rapport à l'origine $(0;0)$ du repère. Cela caractérise une fonction impaire ($f(-x) = -f(x)$)."
+            hint: "💡 Observe la symétrie centrale par rapport à l'origine (0;0).",
+            explanation: "La courbe est symétrique par rapport à l'origine $(0;0)$, ce qui caractérise une fonction impaire."
         },
-
-        // Q4 : Intersection de deux courbes f(x) = g(x)
+        // Q4
         {
             question: "Résoudre graphiquement l'équation $f(x) = g(x)$.",
             plotConfig: {
-                data: [
-                    { fn: '0.2*x^2', color: '#dc2626', attr: { "stroke-width": 3 }, title: 'f(x)' }, // Parabole large
-                    { fn: '0.5*x + 1', color: '#2563eb', attr: { "stroke-width": 3 }, title: 'g(x)' }, // Droite
-                    // Points d'intersection (approx visuelle pour l'élève, calculée ici)
-                    // 0.2x^2 - 0.5x - 1 = 0. Delta = 0.25 - 4(0.2)(-1) = 0.25 + 0.8 = 1.05. Racines complexes à lire.
-                    // On simplifie pour tomber juste : f(x)=x^2/4, g(x)=x+3 -> x^2-4x-12=0 -> (x-6)(x+2)
-                    // Changeons les fns pour tomber juste :
-                    // f: x^2/2 - 2  | g: 0.5x - 1
-                    // x^2/2 - 0.5x - 1 = 0 => x^2 - x - 2 = 0 => (x-2)(x+1) => Sol: -1 et 2
-                ],
-                // On remplace les fns par celles qui tombent juste
                 dataOverride: [
                      { fn: '0.5*x^2 - 2', color: '#dc2626', attr: { "stroke-width": 4 } }, 
                      { fn: '0.5*x - 1', color: '#2563eb', attr: { "stroke-width": 4 } },
@@ -255,7 +237,7 @@
                 xAxis: { domain: [-4, 5] }
             },
             options: [
-                { text: "$S = \\{-1,5 ; 0\\}$", correct: false }, // confusion avec y
+                { text: "$S = \\{-1,5 ; 0\\}$", correct: false },
                 { text: "$S = \\{-1 ; 2\\}$", correct: true },
                 { text: "$S = [-1 ; 2]$", correct: false },
                 { text: "$S = \\emptyset$", correct: false }
@@ -263,17 +245,15 @@
             hint: "💡 On cherche les abscisses ($x$) des points où les deux courbes se croisent.",
             explanation: "Les courbes se coupent aux points d'abscisses $x = -1$ et $x = 2$."
         },
-
-        // Q5 : Inéquation entre deux courbes f(x) >= g(x)
+        // Q5
         {
             question: "Sur quel intervalle a-t-on $f(x) \\ge g(x)$ ? (Rouge au-dessus de Bleu)",
             plotConfig: {
                 data: [
-                     // Mêmes fonctions que Q4
                      { fn: '0.5*x^2 - 2', color: '#dc2626', attr: { "stroke-width": 4 } }, 
                      { fn: '0.5*x - 1', color: '#2563eb', attr: { "stroke-width": 4 } },
-                     { fn: '0.5*x^2 - 2', range: [-5, -1], color: 'rgba(220, 38, 38, 0.3)', closed: true, isHint: true }, // Zone < -1
-                     { fn: '0.5*x^2 - 2', range: [2, 5], color: 'rgba(220, 38, 38, 0.3)', closed: true, isHint: true } // Zone > 2
+                     { fn: '0.5*x^2 - 2', range: [-5, -1], color: 'rgba(220, 38, 38, 0.3)', closed: true, isHint: true },
+                     { fn: '0.5*x^2 - 2', range: [2, 5], color: 'rgba(220, 38, 38, 0.3)', closed: true, isHint: true }
                 ],
                 yAxis: { domain: [-4, 5] },
                 xAxis: { domain: [-4, 5] }
@@ -287,33 +267,10 @@
             hint: "💡 Regarde les zones où la courbe Rouge est située physiquement plus HAUT que la droite Bleue.",
             explanation: "La parabole rouge est au-dessus de la droite bleue à l'extérieur des points d'intersection, donc avant -1 et après 2."
         },
-
-        // Q6 : Maximum Local vs Global
+        // Q6
         {
             question: "Quel est le maximum de la fonction sur l'intervalle $[-2 ; 3]$ ?",
             plotConfig: {
-                data: [
-                    // Une courbe qui monte, descend un peu, puis remonte plus haut
-                    // f(x) = x^3/3 - x. Max local en -1 (val 2/3), Min en 1. En 3, ça explose.
-                    // On veut un max bien visible.
-                    { fn: '-x^3/3 + x + 1', color: '#dc2626', attr: { "stroke-width": 4 } },
-                    // Max local en x=1 -> val -1/3 + 1 + 1 = 1.66
-                    // En x=-2 -> -(-8)/3 - 2 + 1 = 2.66 + 1 - 2 = 1.66 aussi !
-                    // Changeons : f(x) = -0.5x^2 + 2. Simple parabole sur [-2, 3] ? Trop simple.
-                    // Essayons f(x) défini par points interpolation spline implicite... non compliqué.
-                    // Utilisons : f(x) = 2*sin(x) sur [-2, 3] ? Non.
-                    // f(x) = -0.2*(x+1.5)(x-1)(x-4). 
-                    // Sur [-2, 3].
-                ],
-                dataOverride: [
-                    { fn: '-0.3*(x+1)*(x-3)*(x+2)', range: [-2, 3], color: '#dc2626', attr: { "stroke-width": 4 } },
-                    { points: [[1.2, 2.5]], fnType: 'points', graphType: 'scatter', color: 'transparent'} // Force scale
-                ],
-                // Ajustement visuel manuel : la fonction donnée est complexe à "calculer" de tête.
-                // On va faire une lecture directe simple.
-                // Max visuel.
-                // Disons une courbe qui a une pointe à y=3.
-                // f(x) = - (x-1)^2 + 3. Sommet (1, 3).
                 dataOverride: [
                     { fn: '-(x-1)^2 + 3', range: [-2, 3], color: '#dc2626', attr: { "stroke-width": 4 } },
                     { points: [[1, 3]], fnType: 'points', graphType: 'scatter', color: 'black', attr: {r: 5}, isHint: true }
@@ -327,11 +284,10 @@
                 { text: "$0$", correct: false },
                 { text: "$\\approx 2,5$", correct: false }
             ],
-            hint: "💡 Le maximum est la plus grande valeur de $y$ atteinte par la courbe (le sommet de la montagne).",
+            hint: "💡 Le maximum est la plus grande valeur de $y$ atteinte par la courbe.",
             explanation: "Le point le plus haut de la courbe a pour ordonnée $y=3$. Il est atteint pour $x=1$."
         },
-
-        // Q7 : Image par fonction inverse modifiée (Calcul mental)
+        // Q7
         {
             question: "On donne $f(x) = \\frac{2}{x-1}$. Quelle est l'image de $0$ ?",
             plotConfig: {
@@ -351,38 +307,28 @@
             hint: "💡 Remplace $x$ par $0$ dans la formule.",
             explanation: "$f(0) = \\frac{2}{0-1} = \\frac{2}{-1} = -2$."
         },
-
-        // Q8 : LE PIÈGE (Appartenance fonction rationnelle)
+        // Q8 (Piège)
         {
-            question: "Soit $f(x) = \\frac{6x}{x^2+2}$. Le point $A(2 ; 2)$ appartient-il à la courbe ?",
+            question: "Soit $f(x) = \\frac{6x}{x^2+2}$. Le point $A(3 ; 1,6)$ appartient-il à la courbe ?",
+            questionOverride: "Soit $f(x) = \\frac{6x}{x^2+2}$. Le point $A(3 ; 1,6)$ appartient-il à la courbe ?",
             plotConfig: {
                 data: [
                     { fn: '(6*x)/(x^2+2)', color: '#dc2626', attr: { "stroke-width": 4 } },
-                    // Point testé : A(2, 2).
-                    // Image réelle : f(2) = 12 / (4+2) = 12/6 = 2. Ah zut ça marche.
-                    // Je veux un piège.
-                    // Point B(3 ; 1.6). Image réelle : f(3) = 18 / (9+2) = 18/11 = 1.6363...
-                    // Visuellement 1.6 et 1.636 c'est pareil.
-                    // On va poser la question pour A(3 ; 1,6).
                     { points: [[3, 1.6]], fnType: 'points', graphType: 'scatter', color: 'blue', attr: {r: 5}, isHint: true }
                 ],
-                // On change la question dynamiquement
                 yAxis: { domain: [0, 3] },
                 xAxis: { domain: [0, 6] }
             },
-            // Override question text hack
-            questionOverride: "Soit $f(x) = \\frac{6x}{x^2+2}$. Le point $A(3 ; 1,6)$ appartient-il à la courbe ?",
             options: [
                 { text: "Oui, exactement", correct: false },
                 { text: "Non", correct: true },
                 { text: "On ne peut pas savoir", correct: false },
                 { text: "Oui, car f(3) est positif", correct: false }
             ],
-            hint: "💡 Calcule la valeur exacte de $f(3)$ et compare avec 1,6. Utilise des fractions.",
-            explanation: "$f(3) = \\frac{6 \\times 3}{3^2+2} = \\frac{18}{11}$.<br>Or $\\frac{18}{11} \\approx 1,636$.<br>Comme $1,636 \\neq 1,6$, le point n'est pas sur la courbe, même s'il est très proche."
+            hint: "💡 Calcule la valeur exacte de $f(3)$ et compare avec 1,6.",
+            explanation: "$f(3) = \\frac{18}{11} \\approx 1,636$. Comme $1,636 \\neq 1,6$, le point n'est pas sur la courbe."
         },
-
-        // Q9 : Antécédent avec Carré (Deux solutions ou zéro)
+        // Q9
         {
             question: "Résoudre $f(x) = 4$ sachant que la courbe est une parabole $y=x^2$.",
             plotConfig: {
@@ -399,20 +345,16 @@
                 { text: "$x = 16$", correct: false },
                 { text: "$x = -2$ ou $x = 2$", correct: true }
             ],
-            hint: "💡 N'oublie pas les valeurs négatives ! $(-2) \\times (-2) = ...$",
-            explanation: "Il y a deux nombres dont le carré est 4 : $2$ et $-2$. Graphiquement, la droite $y=4$ coupe la courbe deux fois."
+            hint: "💡 N'oublie pas les valeurs négatives !",
+            explanation: "Il y a deux nombres dont le carré est 4 : $2$ et $-2$."
         },
-
-        // Q10 : Table de signes (Lecture graphique)
+        // Q10
         {
             question: "Sur quel ensemble la fonction représentée est-elle strictement positive ($f(x) > 0$) ?",
             plotConfig: {
                 data: [
-                    // Racines à -2, 1, 3.
-                    // f(x) = -(x+2)(x-1)(x-3)
-                    // Si x très grand, - * + * + * + = -. Elle finit en bas.
                     { fn: '-0.2*(x+2)*(x-1)*(x-3)', color: '#dc2626', attr: { "stroke-width": 4 } },
-                    { fn: '0', color: 'black', attr: { "stroke-width": 1 } } // Axe X
+                    { fn: '0', color: 'black', attr: { "stroke-width": 1 } }
                 ],
                 yAxis: { domain: [-5, 5] },
                 xAxis: { domain: [-4, 5] }
@@ -431,8 +373,9 @@
     let currentQIndex = 0;
     let score = 0;
     let hasFailedCurrent = false;
+    // On garde une trace des réponses pour savoir si on doit montrer l'explication au retour
+    let answersState = new Array(quizData.length).fill(null); 
 
-    // Mise à jour du compteur total
     document.getElementById('total-q').innerText = quizData.length;
 
     function typesetMath() {
@@ -441,32 +384,37 @@
 
     function loadQuestion() {
         const qData = quizData[currentQIndex];
-        hasFailedCurrent = false;
+        hasFailedCurrent = false; // Reset de l'état "échec" pour le score si c'est une nouvelle tentative
 
-        // Si questionOverride existe (pour le piège Q8), on l'utilise
         const qText = qData.questionOverride ? qData.questionOverride : qData.question;
         document.getElementById('question-text').innerHTML = qText;
 
         document.getElementById('current-q').innerText = currentQIndex + 1;
         document.getElementById('progress-bar').style.width = ((currentQIndex) / quizData.length * 100) + "%";
 
-        // Reset Feedback
-        document.getElementById('hint-area').style.display = 'none';
-        document.getElementById('success-area').style.display = 'none';
+        // UI Reset
+        const hintArea = document.getElementById('hint-area');
+        const successArea = document.getElementById('success-area');
+        hintArea.style.display = 'none';
+        successArea.style.display = 'none';
 
-        // Boutons navigation
+        // Navigation
         const nextBtn = document.getElementById('btn-next');
+        const prevBtn = document.getElementById('btn-prev');
+        
         nextBtn.style.display = 'block';
         nextBtn.innerText = (currentQIndex === quizData.length - 1) ? "Voir Résultats 🏆" : "Suivant →";
-        nextBtn.disabled = true; // On oblige à répondre
-        nextBtn.style.opacity = "0.5";
+        
+        // MODIFICATION ICI : Bouton toujours actif
+        nextBtn.disabled = false; 
+        nextBtn.style.opacity = "1";
 
-        const prevBtn = document.getElementById('btn-prev');
         prevBtn.style.display = (currentQIndex > 0) ? 'block' : 'none';
 
         // Options
         const optsDiv = document.getElementById('options-container');
         optsDiv.innerHTML = "";
+        
         qData.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'btn-option';
@@ -478,19 +426,17 @@
         // Visuel
         const visualArea = document.getElementById('visual-area');
         visualArea.innerHTML = ''; 
-        setTimeout(() => renderFunctionPlot(qData.plotConfig, false), 50);
+        // Si déjà répondu auparavant, on montre les indices
+        const alreadyAnswered = answersState[currentQIndex] !== null;
+        setTimeout(() => renderFunctionPlot(qData.plotConfig, alreadyAnswered), 50);
 
         typesetMath();
     }
 
     function renderFunctionPlot(config, showHints) {
-        // Pour Q4/Q5 : on a parfois dataOverride
-        let dataToUse = config.data;
-        if (config.dataOverride) {
-            dataToUse = config.dataOverride;
-        }
-
+        let dataToUse = config.dataOverride ? config.dataOverride : config.data;
         const filteredData = dataToUse.filter(item => showHints ? true : !item.isHint);
+        
         const width = document.getElementById('visual-area').clientWidth;
         const height = document.getElementById('visual-area').clientHeight;
 
@@ -499,15 +445,12 @@
             width: width,
             height: height,
             grid: true,
-            disableZoom: true, // Zoom désactivé pour forcer la lecture "tel quel"
+            disableZoom: true,
             data: filteredData,
             tip: {
                 xLine: true,
                 yLine: true,
-                renderer: function (x, y, index) {
-                    // On cache les formules dans le tooltip pour le mode hard
-                    return `x: ${x.toFixed(2)}, y: ${y.toFixed(2)}`;
-                }
+                renderer: function (x, y, index) { return `x: ${x.toFixed(2)}, y: ${y.toFixed(2)}`; }
             }
         }));
     }
@@ -516,11 +459,12 @@
         const hintArea = document.getElementById('hint-area');
         const successArea = document.getElementById('success-area');
         const qData = quizData[currentQIndex];
-        const nextBtn = document.getElementById('btn-next');
+
+        // On marque la question comme répondue
+        answersState[currentQIndex] = optionData.correct;
 
         if (optionData.correct) {
             btnElement.classList.add('correct');
-            // Désactiver les autres
             document.querySelectorAll('.btn-option').forEach(b => b.disabled = true);
             
             hintArea.style.display = 'none';
@@ -532,13 +476,7 @@
                 score++;
                 document.getElementById('current-score-display').innerText = score;
             }
-            
-            // Montrer les indices visuels maintenant
             renderFunctionPlot(qData.plotConfig, true);
-            
-            // Activer bouton suivant
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = "1";
 
         } else {
             hasFailedCurrent = true;
@@ -546,8 +484,6 @@
             btnElement.disabled = true;
             hintArea.innerHTML = qData.hint;
             hintArea.style.display = 'block';
-            
-            // En mode difficile, on affiche l'aide visuelle dès l'erreur pour aider à comprendre
             renderFunctionPlot(qData.plotConfig, true);
             typesetMath();
         }
@@ -589,9 +525,8 @@
     }
 
     window.addEventListener('resize', () => {
-        // On relance le rendu si redimensionnement
         const qData = quizData[currentQIndex];
-        // On check si on doit montrer les indices (si le quiz est en état 'répondu')
+        // On check si on doit montrer les indices
         const isAnswered = document.querySelector('.btn-option.correct') || document.querySelector('.btn-option.wrong');
         renderFunctionPlot(qData.plotConfig, !!isAnswered);
     });
