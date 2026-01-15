@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCM : Graphiques & Tableaux (Fix Alignement)</title>
+    
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        startup: { typeset: false }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script src="https://unpkg.com/d3@3/d3.min.js"></script>
+    <script src="https://unpkg.com/function-plot@1/dist/function-plot.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #6B7280;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --bg: #F3F4F6;
+            --card: #ffffff;
+            --text: #1F2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card); width: 100%; max-width: 900px;
+            border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden; padding: 30px;
+        }
+
+        header { text-align: center; margin-bottom: 25px; }
+        h1 { color: var(--primary); font-size: 1.8rem; margin: 0 0 10px 0; }
+
+        .progress-container {
+            background-color: #e5e7eb; border-radius: 99px; height: 8px; width: 100%;
+            margin-bottom: 15px; overflow: hidden;
+        }
+        .progress-bar {
+            background-color: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease;
+        }
+
+        /* --- ZONE VISUELLE --- */
+        .visual-container {
+            width: 100%; 
+            height: 350px; /* Hauteur fixe et "carrée" */
+            margin: 0 auto 25px auto;
+            border: 2px solid #333;
+            border-radius: 12px;
+            background: #fff;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+            position: relative;
+        }
+
+        /* Styles Function-Plot */
+        .function-plot .grid .tick line { stroke: #e5e7eb !important; stroke-width: 1px !important; opacity: 1 !important; }
+        .function-plot .axis path.domain { stroke: #000 !important; stroke-width: 2.5px !important; }
+        .function-plot .axis .tick line { stroke: #000 !important; stroke-width: 2px !important; }
+        .function-plot .axis text { fill: #000 !important; font-size: 14px !important; font-weight: bold; }
+
+        /* Styles TABLEAU DE VARIATION */
+        .tv-wrapper {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .tv-row {
+            display: grid; 
+            grid-template-columns: 90px 1fr; /* Colonne 1 fixe, Colonne 2 flexible */
+            border-bottom: 2px solid #333;
+            width: 100%;
+        }
+        /* La dernière ligne prend tout l'espace restant */
+        .tv-row:last-child { 
+            border-bottom: none; 
+            flex-grow: 1; 
+            /* On enlève position:relative d'ici pour éviter le bug de décalage */
+        }
+        
+        .tv-header {
+            background: #f4f4f4; border-right: 2px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-style: italic; font-size: 1.2rem;
+            height: 100%;
+        }
+        .tv-data {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 40px; font-size: 1.2rem; font-weight: bold;
+        }
+        
+        /* Correction du conteneur Canvas */
+        .tv-canvas-container {
+            position: relative; /* Relatif à sa colonne grid, pas à la ligne entière */
+            width: 100%; 
+            height: 100%;
+            overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- INTERFACE QUIZ --- */
+        .question-text { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; text-align: center; }
+        
+        .options-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;
+        }
+        @media (max-width: 600px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .visual-container { height: 300px !important; } 
+        }
+
+        .btn-option {
+            background: white; border: 2px solid #e5e7eb; padding: 15px;
+            border-radius: 12px; cursor: pointer; font-size: 1rem;
+            transition: all 0.2s; text-align: left;
+        }
+        .btn-option:hover:not(:disabled) { border-color: var(--primary); background-color: #EEF2FF; }
+        .btn-option.correct { background-color: #D1FAE5; border-color: var(--success); color: #065F46; }
+        .btn-option.wrong { background-color: #FEE2E2; border-color: var(--danger); color: #991B1B; opacity: 0.7; }
+
+        .feedback {
+            padding: 15px; border-radius: 8px; margin-top: 15px; display: none; line-height: 1.5;
+        }
+        .feedback.hint { background-color: #FFFBEB; border-left: 5px solid var(--warning); color: #92400E; }
+        .feedback.success { background-color: #D1FAE5; border-left: 5px solid var(--success); color: #065F46; }
+
+        .controls { display: flex; justify-content: space-between; margin-top: 20px; height: 50px; }
+        
+        .btn-nav {
+            color: white; border: none;
+            padding: 12px 24px; border-radius: 8px; font-size: 1rem; cursor: pointer;
+            display: inline-block;
+        }
+        .btn-next { background-color: var(--primary); }
+        .btn-next:hover { background-color: #4338ca; }
+
+        .btn-prev { background-color: var(--secondary); display: none; }
+        .btn-prev:hover { background-color: #4b5563; }
+        
+        .result-screen { text-align: center; display: none; padding: 40px 0; }
+        .score-circle {
+            width: 150px; height: 150px; border-radius: 50%;
+            background: conic-gradient(var(--primary) 0%, #e5e7eb 0%);
+            display: flex; justify-content: center; align-items: center; margin: 0 auto 30px auto;
+        }
+        .score-inner {
+            width: 130px; height: 130px; background: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2.5rem; font-weight: bold; color: var(--primary);
+        }
+        .btn-restart {
+            background-color: var(--text); color: white; border: none;
+            padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📈 Images et Antécédents</h1>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+        <div style="display:flex; justify-content:space-between; color: #6b7280; font-size: 0.9rem;">
+            <span>Score: <strong id="current-score-display">0</strong></span>
+            <span>Question <span id="current-q">1</span> / <span id="total-q"></span></span>
+        </div>
+    </header>
+
+    <div id="quiz-area">
+        <div class="question-text" id="question-text"></div>
+        <div class="visual-container" id="visual-area"></div>
+        <div class="options-grid" id="options-container"></div>
+        <div class="feedback hint" id="hint-area"></div>
+        <div class="feedback success" id="success-area"></div>
+        
+        <div class="controls">
+            <button class="btn-nav btn-prev" id="btn-prev" onclick="prevQuestion()">← Précédent</button>
+            <button class="btn-nav btn-next" id="btn-next" onclick="nextQuestion()">Question Suivante →</button>
+        </div>
+    </div>
+
+    <div id="result-area" class="result-screen">
+        <h2>Quiz Terminé !</h2>
+        <p>Ton score final :</p>
+        <div class="score-circle" id="score-circle"><div class="score-inner" id="final-score"></div></div>
+        <p id="comment-score" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
+        <button class="btn-restart" onclick="location.reload()">Recommencer le Quiz</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        // 1. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Quelle est l'image de $0$ par la fonction $f$ ?",
+            plotConfig: {
+                data: [
+                    { fn: 'x^2 - 1', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { points: [[0, -1]], fnType: 'points', graphType: 'scatter', color: 'black', attr: {r: 6}, isHint: true }
+                ],
+                yAxis: { domain: [-3, 3] }, xAxis: { domain: [-3, 3] }
+            },
+            options: [
+                { text: "$0$", correct: false },
+                { text: "$-1$", correct: true },
+                { text: "$1$", correct: false },
+                { text: "$-2$", correct: false }
+            ],
+            hint: "💡 Regarde le point noir apparu sur l'axe vertical.",
+            explanation: "La courbe passe par le point $(0 ; -1)$. On a donc $f(0) = -1$."
+        },
+        // 2. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Quel est l'antécédent de $2$ par la fonction $g(x) = x$ ?",
+            plotConfig: {
+                data: [
+                    { fn: 'x', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { points: [[2, 2]], fnType: 'points', graphType: 'scatter', color: 'black', attr: {r: 6}, isHint: true },
+                    { fn: '2', color: 'tomato', borderDash: [5,5], skipTip: true, attr: { "stroke-width": 3 }, isHint: true }
+                ],
+                yAxis: { domain: [-1, 4] }, xAxis: { domain: [-1, 4] }
+            },
+            options: [
+                { text: "$0$", correct: false },
+                { text: "$2$", correct: true },
+                { text: "$-2$", correct: false },
+                { text: "$1$", correct: false }
+            ],
+            hint: "💡 Suis la ligne rouge pointillée qui part de $y=2$.",
+            explanation: "Pour obtenir une hauteur de 2 sur la droite $y=x$, il faut se placer en $x=2$."
+        },
+        // 3. TABLEAU
+        {
+            type: 'table',
+            question: "D'après ce tableau de variation, quelle est l'image de $3$ ?",
+            tableConfig: {
+                x: ["-∞", "0", "3", "+∞"],
+                fx: [
+                    { type: 'max', val: '+∞' },
+                    { type: 'min', val: '2' }, 
+                    { type: 'max', val: '5', isTarget: true },
+                    { type: 'min', val: '-∞' }
+                ]
+            },
+            options: [
+                { text: "$2$", correct: false },
+                { text: "$3$", correct: false },
+                { text: "$5$", correct: true },
+                { text: "$0$", correct: false }
+            ],
+            hint: "💡 Cherche $x=3$ dans la première ligne, puis regarde la valeur correspondante en dessous.",
+            explanation: "Dans la colonne du $3$, la flèche monte jusqu'à la valeur $5$. Donc $f(3)=5$."
+        },
+        // 4. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Lire graphiquement $f(2)$.",
+            plotConfig: {
+                data: [
+                    { fn: '-0.5 * x^2 + 2', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { points: [[2, 0]], fnType: 'points', graphType: 'scatter', color: 'black', attr: {r: 6}, isHint: true }
+                ],
+                yAxis: { domain: [-4, 4] }, xAxis: { domain: [-2, 4] }
+            },
+            options: [
+                { text: "$0$", correct: true },
+                { text: "$-2$", correct: false },
+                { text: "$2$", correct: false },
+                { text: "$4$", correct: false }
+            ],
+            hint: "💡 Le point d'abscisse 2 est sur l'axe horizontal.",
+            explanation: "En $x=2$, la courbe coupe l'axe des abscisses. L'ordonnée est 0."
+        },
+        // 5. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Combien le nombre $1$ possède-t-il d'antécédents ?",
+            plotConfig: {
+                data: [
+                    { fn: '0.5 * x^2', color: 'steelblue', attr: { "stroke-width": 4 } }, 
+                    { fn: '1', color: 'tomato', attr: {'stroke-dasharray': '5,5', "stroke-width": 3}, isHint: true }
+                ],
+                yAxis: { domain: [-1, 3] }, xAxis: { domain: [-3, 3] }
+            },
+            options: [
+                { text: "0", correct: false },
+                { text: "1", correct: false },
+                { text: "2", correct: true },
+                { text: "3", correct: false }
+            ],
+            hint: "💡 La ligne rouge ($y=1$) coupe la courbe bleue en combien d'endroits ?",
+            explanation: "La droite horizontale coupe la parabole en deux points distincts. Il y a 2 antécédents."
+        },
+        // 6. TABLEAU
+        {
+            type: 'table',
+            question: "Quel est le maximum de la fonction $f$ sur l'intervalle donné ?",
+            tableConfig: {
+                x: ["-5", "-2", "4", "8"],
+                fx: [
+                    { type: 'min', val: '-3' },
+                    { type: 'max', val: '10', isTarget: true },
+                    { type: 'min', val: '0' },
+                    { type: 'max', val: '7' }
+                ]
+            },
+            options: [
+                { text: "$7$", correct: false },
+                { text: "$10$", correct: true },
+                { text: "$8$", correct: false },
+                { text: "$-2$", correct: false }
+            ],
+            hint: "💡 Cherche la valeur la plus haute atteinte par les flèches.",
+            explanation: "Le point le plus haut dans le tableau est $10$ (atteint pour $x=-2$)."
+        },
+        // 7. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Résoudre graphiquement l'équation $f(x) = 0$.",
+            plotConfig: {
+                data: [
+                    { fn: 'x^2 - 4', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { points: [[-2, 0], [2, 0]], fnType: 'points', graphType: 'scatter', color: 'red', attr: {r: 5}, isHint: true }
+                ],
+                yAxis: { domain: [-5, 2] }, xAxis: { domain: [-4, 4] }
+            },
+            options: [
+                { text: "$x = 0$", correct: false },
+                { text: "$x = 2$", correct: false },
+                { text: "$x = -2$ et $x = 2$", correct: true },
+                { text: "$x = -4$", correct: false }
+            ],
+            hint: "💡 Regarde les points rouges sur l'axe horizontal.",
+            explanation: "La courbe coupe l'axe des abscisses en $-2$ et en $2$."
+        },
+        // 8. TABLEAU
+        {
+            type: 'table',
+            question: "D'après ce tableau, combien l'équation $f(x)=0$ a-t-elle de solutions ?",
+            tableConfig: {
+                x: ["-∞", "-2", "5", "+∞"],
+                fx: [
+                    { type: 'min', val: '-4' },
+                    { type: 'max', val: '-1' },
+                    { type: 'min', val: '-5' },
+                    { type: 'max', val: '2', isTarget: true } 
+                ]
+            },
+            options: [
+                { text: "0", correct: false },
+                { text: "1", correct: true },
+                { text: "2", correct: false },
+                { text: "3", correct: false }
+            ],
+            hint: "💡 Regarde les valeurs : est-ce qu'on passe du négatif au positif quelque part ?",
+            explanation: "La fonction reste négative (max -1) sur la gauche. Elle ne passe par 0 qu'une seule fois, sur la dernière flèche (entre -5 et 2)."
+        },
+        // 9. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Quel est le **maximum** de cette fonction sur l'écran ?",
+            plotConfig: {
+                data: [
+                    { fn: '- (x-1)^2 + 3', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { points: [[1, 3]], fnType: 'points', graphType: 'scatter', color: 'red', attr: {r: 6}, isHint: true }
+                ],
+                yAxis: { domain: [-1, 5] }, xAxis: { domain: [-2, 4] }
+            },
+            options: [
+                { text: "$1$", correct: false },
+                { text: "$2$", correct: false },
+                { text: "$3$", correct: true },
+                { text: "$4$", correct: false }
+            ],
+            hint: "💡 Regarde le sommet (point rouge). Quelle est sa hauteur ?",
+            explanation: "Le sommet est à une hauteur de 3."
+        },
+        // 10. GRAPHIQUE
+        {
+            type: 'plot',
+            question: "Résoudre l'inéquation $f(x) > 0$.",
+            plotConfig: {
+                data: [
+                    { fn: '-(x)(x-2)', color: 'steelblue', attr: { "stroke-width": 4 } },
+                    { fn: '-(x)(x-2)', range: [0, 2], closed: true, color: 'rgba(16, 185, 129, 0.2)', isHint: true }
+                ],
+                yAxis: { domain: [-2, 2] }, xAxis: { domain: [-2, 4] }
+            },
+            options: [
+                { text: "$]-\\infty ; 0[$", correct: false },
+                { text: "$]0 ; 2[$", correct: true },
+                { text: "$[0 ; 2]$", correct: false },
+                { text: "$]2 ; +\\infty[$", correct: false }
+            ],
+            hint: "💡 Regarde la zone colorée (la bosse au-dessus de l'axe).",
+            explanation: "La courbe est au-dessus de l'axe entre 0 et 2 (exclus car $>0$ strict)."
+        }
+    ];
+
+    let currentQIndex = 0;
+    let score = 0;
+    let hasFailedCurrent = false;
+    let areHintsVisible = false;
+
+    // Mise à jour du compteur total
+    document.getElementById('total-q').innerText = quizData.length;
+
+    function typesetMath() {
+        if (window.MathJax) MathJax.typesetPromise().catch(err => console.log(err));
+    }
+
+    function loadQuestion() {
+        const qData = quizData[currentQIndex];
+        hasFailedCurrent = false;
+        areHintsVisible = false;
+        
+        // UI Text
+        document.getElementById('question-text').innerHTML = qData.question;
+        document.getElementById('current-q').innerText = currentQIndex + 1;
+        document.getElementById('progress-bar').style.width = ((currentQIndex) / quizData.length * 100) + "%";
+        
+        // Reset Feedback
+        document.getElementById('hint-area').style.display = 'none';
+        document.getElementById('success-area').style.display = 'none';
+
+        // GESTION DES BOUTONS DE NAVIGATION
+        const nextBtn = document.getElementById('btn-next');
+        nextBtn.style.display = 'block';
+        if (currentQIndex === quizData.length - 1) {
+            nextBtn.innerText = "Voir les résultats 🏆";
+        } else {
+            nextBtn.innerText = "Question Suivante →";
+        }
+
+        const prevBtn = document.getElementById('btn-prev');
+        if (currentQIndex > 0) {
+            prevBtn.style.display = 'block';
+        } else {
+            prevBtn.style.display = 'none';
+        }
+
+        // Génération Options
+        const optsDiv = document.getElementById('options-container');
+        optsDiv.innerHTML = "";
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-option';
+            btn.innerHTML = `<strong>${String.fromCharCode(65+idx)})</strong>&nbsp; ${opt.text}`;
+            btn.onclick = () => checkAnswer(opt, btn);
+            optsDiv.appendChild(btn);
+        });
+
+        // RENDU VISUEL (Plot ou Table)
+        const visualArea = document.getElementById('visual-area');
+        visualArea.innerHTML = ''; 
+
+        if(qData.type === 'plot') {
+            setTimeout(() => renderFunctionPlot(qData.plotConfig, false), 50);
+        } else if (qData.type === 'table') {
+            setTimeout(() => renderTable(qData.tableConfig, false), 50);
+        }
+
+        typesetMath();
+    }
+
+    // --- MOTEUR GRAPHIQUE ---
+    function renderFunctionPlot(config, showHints) {
+        const filteredData = config.data.filter(item => showHints ? true : !item.isHint);
+        
+        const width = document.getElementById('visual-area').clientWidth;
+        const height = document.getElementById('visual-area').clientHeight;
+
+        functionPlot(Object.assign({}, config, {
+            target: '#visual-area',
+            width: width,
+            height: height,
+            grid: true,
+            disableZoom: false,
+            data: filteredData
+        }));
+    }
+
+    // --- MOTEUR TABLEAU DE VARIATION ---
+    function renderTable(config, showHints) {
+        const container = document.getElementById('visual-area');
+        
+        let xHTML = "";
+        config.x.forEach(val => xHTML += `<span>${val}</span>`);
+
+        const html = `
+        <div class="tv-wrapper">
+            <div class="tv-row" style="height: 70px;"> 
+                <div class="tv-header">x</div>
+                <div class="tv-data" id="rowX">${xHTML}</div>
+            </div>
+            <div class="tv-row">
+                <div class="tv-header">f(x)</div>
+                <div class="tv-canvas-container">
+                    <canvas id="tvCanvas"></canvas>
+                </div>
+            </div>
+        </div>`;
+        
+        container.innerHTML = html;
+        setTimeout(() => drawTableCanvas(config, showHints), 50);
+    }
+
+    function drawTableCanvas(config, showHints) {
+        const canvas = document.getElementById('tvCanvas');
+        if(!canvas) return;
+        
+        // On récupère la largeur exacte du conteneur parent (la cellule de droite)
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        const ctx = canvas.getContext('2d');
+        const rowX = document.getElementById('rowX');
+        // Rectangle de rowX pour comparer les positions
+        const rowXRect = rowX.getBoundingClientRect();
+        // Rectangle du container canvas pour normaliser
+        const canvasRect = container.getBoundingClientRect();
+
+        ctx.font = "bold 20px 'Segoe UI', sans-serif";
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#333";
+
+        const spans = rowX.querySelectorAll('span');
+        const coords = [];
+        
+        const centerY = canvas.height / 2;
+        const gap = Math.min((canvas.height / 2) - 30, 80); 
+
+        spans.forEach((span, i) => {
+            const spanRect = span.getBoundingClientRect();
+            // Calcul précis : 
+            // Position absolue du centre du span (spanRect.left + w/2)
+            // MOINS Position absolue du bord gauche du canvas (canvasRect.left)
+            const centerX = (spanRect.left + spanRect.width / 2) - canvasRect.left;
+            
+            const isHigh = config.fx[i].type === 'max';
+            
+            coords.push({
+                x: centerX,
+                y: isHigh ? centerY - gap : centerY + gap,
+                val: config.fx[i].val,
+                isTarget: config.fx[i].isTarget
+            });
+        });
+
+        const arrowMargin = 25;
+        for (let i = 0; i < coords.length - 1; i++) {
+            const start = coords[i];
+            const end = coords[i+1];
+            let currentMargin = arrowMargin;
+            const dist = end.x - start.x;
+            if (dist < (arrowMargin * 2 + 10)) currentMargin = dist / 2 - 5;
+
+            ctx.beginPath();
+            ctx.moveTo(start.x + currentMargin, start.y);
+            ctx.lineTo(end.x - currentMargin, end.y);
+            ctx.stroke();
+            
+            drawArrowHead(ctx, start.x + currentMargin, start.y, end.x - currentMargin, end.y);
+        }
+
+        coords.forEach(p => {
+            ctx.fillStyle = "#000";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(p.val, p.x, p.y);
+
+            if(showHints && p.isTarget) {
+                ctx.beginPath();
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 3;
+                ctx.arc(p.x, p.y, 25, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.strokeStyle = "#333";
+            }
+        });
+    }
+
+    function drawArrowHead(ctx, x1, y1, x2, y2) {
+        const headLength = 12;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+    }
+
+
+    // --- JEU ---
+    function checkAnswer(optionData, btnElement) {
+        const hintArea = document.getElementById('hint-area');
+        const successArea = document.getElementById('success-area');
+        const qData = quizData[currentQIndex];
+
+        if (optionData.correct) {
+            btnElement.classList.add('correct');
+            document.querySelectorAll('.btn-option').forEach(b => b.disabled = true);
+            hintArea.style.display = 'none';
+            successArea.innerHTML = `<strong>✅ Bravo !</strong><br>${qData.explanation}`;
+            successArea.style.display = 'block';
+            typesetMath();
+
+            if (!hasFailedCurrent) {
+                score++;
+                document.getElementById('current-score-display').innerText = score;
+            }
+
+            areHintsVisible = true;
+            refreshVisual(true);
+            
+        } else {
+            hasFailedCurrent = true;
+            btnElement.classList.add('wrong');
+            btnElement.disabled = true;
+            hintArea.innerHTML = qData.hint;
+            hintArea.style.display = 'block';
+            
+            areHintsVisible = true;
+            refreshVisual(true);
+            typesetMath();
+        }
+    }
+
+    function refreshVisual(showHints) {
+        const qData = quizData[currentQIndex];
+        if(qData.type === 'plot') renderFunctionPlot(qData.plotConfig, showHints);
+        else if(qData.type === 'table') drawTableCanvas(qData.tableConfig, showHints); 
+    }
+
+    function nextQuestion() {
+        if (currentQIndex < quizData.length - 1) {
+            currentQIndex++;
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentQIndex > 0) {
+            currentQIndex--;
+            loadQuestion();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}`;
+        document.getElementById('progress-bar').style.width = "100%";
+        const percentage = (score / quizData.length) * 100;
+        document.getElementById('score-circle').style.background = 
+            `conic-gradient(var(--primary) ${percentage}%, #e5e7eb ${percentage}%)`;
+        
+        let comment = "";
+        if(score === quizData.length) comment = "🥇 Parfait !";
+        else if(score >= 8) comment = "🥈 Très bien !";
+        else if(score >= 5) comment = "🥉 Pas mal.";
+        else comment = "💪 Courage !";
+        document.getElementById('comment-score').innerText = comment;
+    }
+
+    window.addEventListener('resize', () => refreshVisual(areHintsVisible));
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>
